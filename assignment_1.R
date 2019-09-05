@@ -6,7 +6,7 @@ library(lubridate)
 # Now that we have learned how to munge (manipulate) data
 # and plot it, we will work on using these skills in new ways
 
-
+#matt was here
 ####-----Reading in Data and Stacking it ----- ####
 #Reading in files
 files <- list.files('data',full.names=T)

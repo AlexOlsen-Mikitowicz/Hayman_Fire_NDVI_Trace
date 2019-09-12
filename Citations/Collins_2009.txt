@@ -1,0 +1,10 @@
+@article{collins2009interactions,
+  title={Interactions among wildland fires in a long-established Sierra Nevada natural fire area},
+  author={Collins, Brandon M and Miller, Jay D and Thode, Andrea E and Kelly, Maggi and Van Wagtendonk, Jan W and Stephens, Scott L},
+  journal={Ecosystems},
+  volume={12},
+  number={1},
+  pages={114--128},
+  year={2009},
+  publisher={Springer}
+}

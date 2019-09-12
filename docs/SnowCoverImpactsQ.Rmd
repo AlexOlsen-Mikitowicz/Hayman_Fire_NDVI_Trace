@@ -1,0 +1,75 @@
+---
+title: "Snow cover impacts on watershed discharge"
+author: "Alex Olsen-Mikitowicz"
+date: "9/10/2019"
+output: html_document
+---
+
+# Header 1
+How do remotely sensed snow cover metrics impact discharge in the same water year in central Colorado?
+
+## Header 3
+Data checking
+
+### Header 4
+Data read in
+
+First we need to get our snow metric (ndsi) data and then also download discharge data from the USGS
+
+```{r setup, warning = FALSE, message = FALSE, include=TRUE}
+library(tidyverse) 
+library(lubridate)
+library(dataRetrieval) #for downloading USGS data
+
+#Can use this to manually set WD when reading in data. This is what you need to do when reading data in Rmd and other similar things that get knitted: knitr::opts_knit$set(root.dir="../")
+#You can't assign a WD by using the "more" option on the files tab lower right window pane
+
+#matt used this code in class - as a script for running to knit (another useful took is render            
+#                                                         rmarkdown::render("src/2_ndsi_q.Rmd", 
+#                                                                   output_file = "../docs/2_ndsi.q.html")
+
+#ndsi 
+ndsi <- read_csv('Data/hayman_ndsi.csv') %>%
+  rename(burned=2,unburned=3) %>%
+  filter(!is.na(burned),
+         !is.na(unburned)) %>%
+  gather(.,key='site',
+         value='ndsi',
+         -DateTime) # For this analysis we want the data in long format
+  
+  
+#USGS gauge above cheeseman lake '00060'
+q_hayman <- readNWISdata(sites=c('06700000'), #Site code 
+                  parameterCd='00060', #discharge code in cfs
+                  service='dv', # service = daily values (versus annual)
+                  startDate='1984-10-01', #Start date for getting the data
+                  endDate = '2019-9-10') %>% # End date (today) 
+  rename(q_cfs = X_00060_00003,
+         quality_cd = X_00060_00003_cd) %>% #rename long column name
+  filter(!is.na(q_cfs)) %>% #Drop NAs which can occur when there is ice or sensor breaks
+  as_tibble() #To make it act like a tibble
+knitr::opts_chunk$set(echo = False)
+```
+
+# Data Exploring
+
+## NDSI Summary
+
+```{r NDSI Summary}
+summary(ndsi)
+```
+## Q Summary
+```{r Q Summary, echo=FALSE}
+summary(q_hayman)
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,8 +1,9 @@
 ---
 title: "NDVI Trace in Hayman Fire"
-author: "Matthew Ross"
+author: "Alex Olsen-Mikitowicz"
 date: "9/5/2019"
-output: html_document
+output: pdf_document
+bibliography: Citations/Collins_2009.txt
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Hayman Fire
 
 In 2002 there was a large fire in central Colorado. This analysis is meant
-to highlight how the fire altered vegetation in the area.
+to highlight how the fire altered vegetation in the area. Here we compare the data to data in the Sierra Nevada [@collins2009interactions]
 
 
 ### Data read
@@ -26,7 +27,7 @@ unburned vs burned sites in the Hayman region.
 
 ```{r data-read}
 #Reading in the data. 
-ndvi <- read_csv('data/hayman_ndvi.csv') %>%
+ndvi <- read_csv('Data/hayman_ndvi.csv') %>%
   rename(burned=2,unburned=3) %>%
   filter(!is.na(burned),
          !is.na(unburned))

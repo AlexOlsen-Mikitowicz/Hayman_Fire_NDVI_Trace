@@ -160,5 +160,7 @@ ggplot(q_ndsi_innerjoin, aes(x= maxNDSI, y = mean_Q, color = wtr_yr))+
   ylab("Mean Discharge (cfs)")+
   geom_point()
 
+#Thank you Matt for another great assignment, especially the join exercise at the end (that was something I was really unsure of). I'm looking forward to using Rmd for reports and these upcoming lessons with spatial data. Have a great weekend sir!
 ```
+
 

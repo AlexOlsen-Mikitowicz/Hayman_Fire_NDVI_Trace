@@ -1,18 +1,20 @@
 ---
-title: "Snow cover impacts on watershed discharge"
+title: "Snow Cover Impacts on Watershed Discharge"
 author: "Alex Olsen-Mikitowicz"
 date: "9/10/2019"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
-# Header 1
-How do remotely sensed snow cover metrics impact discharge in the same water year in central Colorado?
+# How do remotely sensed snow cover metrics impact discharge in the same water year in central Colorado?
 
-## Header 3
-Data checking
 
-### Header 4
-Data read in
+## Data checking
+
+
+### Data read in
+
 
 First we need to get our snow metric (ndsi) data and then also download discharge data from the USGS
 
@@ -20,11 +22,18 @@ First we need to get our snow metric (ndsi) data and then also download discharg
 library(tidyverse) 
 library(lubridate)
 library(dataRetrieval) #for downloading USGS data
+knitr::opts_chunk$set(echo = FALSE) #setting a global option for all chunks 
+#knitr::opts_knit$set(root.dir = 'C:/Users/aolse/Documents/WR674/Hayman_Fire_NDVI_Trace_Round3')
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+#knitr::opts_knit$set(root.dir='..')
+```
 
+
+```{r calling data, warning = FALSE, message = FALSE, include=TRUE}
 #Can use this to manually set WD when reading in data. This is what you need to do when reading data in Rmd and other similar things that get knitted: knitr::opts_knit$set(root.dir="../")
 #You can't assign a WD by using the "more" option on the files tab lower right window pane
 
-#matt used this code in class - as a script for running to knit (another useful took is render            
+#matt used this code in class - as a script for running to knit (another useful tool is render            
 #                                                         rmarkdown::render("src/2_ndsi_q.Rmd", 
 #                                                                   output_file = "../docs/2_ndsi.q.html")
 
@@ -48,28 +57,108 @@ q_hayman <- readNWISdata(sites=c('06700000'), #Site code
          quality_cd = X_00060_00003_cd) %>% #rename long column name
   filter(!is.na(q_cfs)) %>% #Drop NAs which can occur when there is ice or sensor breaks
   as_tibble() #To make it act like a tibble
-knitr::opts_chunk$set(echo = False)
+
 ```
 
 # Data Exploring
 
 ## NDSI Summary
 
-```{r NDSI Summary}
+```{r NDSI Summary }
 summary(ndsi)
 ```
+
 ## Q Summary
-```{r Q Summary, echo=FALSE}
+```{r Q Summary }
 summary(q_hayman)
 ```
 
+# Combining the Data
 
-## Including Plots
+## Adding a Water Year Column
+When analyzing water flux data, we typically break the year up into “water years” which run from October to the end of September. For this exploratory analysis, we want to group the datasets by water year and then join them to each other so we can compare winter average, max, median, etc… of snow cover versus the next water year’s water flux. So we have to add a column called water year
 
-You can also embed plots, for example:
+### Q water year
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r Q Water year, echo = TRUE}
+q_water_year <- q_hayman %>%
+  mutate(month=month(dateTime),
+         year_offset = ifelse(month > 9,1,0),
+         wtr_yr = year(dateTime) + year_offset)
+
+table(q_water_year$wtr_yr)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### NDSI water year
+
+```{r NDSI water year }
+ndsi_water_year <- ndsi %>%
+  mutate(month=month(DateTime),
+         year_offset = ifelse(month > 9,1,0),
+         wtr_yr = year(DateTime) + year_offset)
+
+table(ndsi_water_year$wtr_yr)
+```
+
+## Filtering and summarizing
+Now that we have our matched datasets we want to do a couple filtering operations. First, we want to make sure that we are only analyzing complete water years from the Q dataset. Second, we want to make sure we are only summarizing the snow data over months where snow cover is possible, which I would guess is between october and may. Once we have these filtering operations done, we want to summarize each dataset by water year so we can eventually join them and see if snow cover predicts Q.
+
+
+### Snow water year summary statistics
+```{r NDSI display}
+
+snow_wy_summary <- filter(ndsi_water_year, !month %in% c(6,7,8,9)) %>%
+  #select(ndsi_water_year, wtr_yr, ndsi) %>%
+  group_by(wtr_yr) %>%
+  summarize(meanNDSI = mean(ndsi), maxNDSI = max(ndsi), medianNDSI = median(ndsi))
+show(snow_wy_summary)
+
+```
+
+### Whole Q water year summaries
+```{r Q display}
+q_complete <- filter(q_water_year, wtr_yr %in% c(2003, 2004,2006:2018))%>%
+  group_by(wtr_yr) %>%
+  summarize(mean_Q = mean(q_cfs), max_Q = max(q_cfs), median_Q = median(q_cfs))
+show(q_complete)
+
+```
+
+```{r joining Q and NDSI on water year and exploring the different join types in dplyr}
+#right join
+#q_ndsi_leftjoin = snow_wy_summary %>% 
+#  left_join(q_complete, by = "wtr_yr")
+
+#left join
+#q_ndsi_rightjoin = snow_wy_summary %>% 
+ # right_join(q_complete, by = "wtr_yr")
+
+#inner join
+q_ndsi_innerjoin = snow_wy_summary %>% 
+  inner_join(q_complete, by = "wtr_yr")
+
+#full join
+#q_ndsi_fulljoin = snow_wy_summary %>% 
+ # full_join(q_complete, by = "wtr_yr")
+
+```
+
+# Plots of Snow Cover vs Q
+## Mean Snow vs Median Q
+```{r Plotting mean snow cover vs median Q}
+#
+ggplot(q_ndsi_innerjoin, aes(x= meanNDSI, y = median_Q, color = wtr_yr))+
+  xlab("Mean Snow Cover")+
+  ylab("Median Discharge (cfs)")+
+  geom_point()
+
+```
+
+```{r Plotting max snow cover vs mean Q }
+ggplot(q_ndsi_innerjoin, aes(x= maxNDSI, y = mean_Q, color = wtr_yr))+
+  xlab("Max Snow Cover")+
+  ylab("Mean Discharge (cfs)")+
+  geom_point()
+
+```
+
